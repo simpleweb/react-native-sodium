@@ -45,6 +45,7 @@ RCT_EXPORT_MODULE();
     @"crypto_auth_KEYBYTES": @crypto_auth_KEYBYTES,
     @"crypto_auth_BYTES": @crypto_auth_BYTES,
     @"crypto_box_PUBLICKEYBYTES": @crypto_box_PUBLICKEYBYTES,
+    @"crypto_box_SEALBYTES": @crypto_box_SEALBYTES,
     @"crypto_box_SECRETKEYBYTES": @crypto_box_SECRETKEYBYTES,
     @"crypto_box_NONCEBYTES": @crypto_box_NONCEBYTES,
     @"crypto_box_MACBYTES": @crypto_box_MACBYTES,
@@ -277,6 +278,44 @@ RCT_EXPORT_METHOD(crypto_box_beforenm:(NSString*)pk sk:(NSString*)sk resolve:(RC
     reject(ESODIUM,ERR_FAILURE,nil);
   else
     resolve([[NSData dataWithBytesNoCopy:dshared length:crypto_box_SECRETKEYBYTES freeWhenDone:NO]  base64EncodedStringWithOptions:0]);
+}
+
+
+// *****************************************************************************
+// * Public-key cryptography - sealed boxes
+// *****************************************************************************
+RCT_EXPORT_METHOD(crypto_box_seal:(NSString*)m pk:(NSString*)pk resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+{
+  const NSData *dm = [[NSData alloc] initWithBase64EncodedString:m options:0];
+  const NSData *dpk = [[NSData alloc] initWithBase64EncodedString:pk options:0];
+  if (!dm || !dpk) reject(ESODIUM,ERR_FAILURE,nil);
+  else if (dpk.length != crypto_box_PUBLICKEYBYTES) reject(ESODIUM,ERR_BAD_KEY,nil);
+  else {
+    unsigned long clen = crypto_box_SEALBYTES + dm.length;
+    unsigned char *dc = (unsigned char *) sodium_malloc(clen);
+    if (dc == NULL) reject(ESODIUM,ERR_FAILURE,nil);
+    else {
+      int result = crypto_box_seal(dc, [dm bytes], dm.length, [dpk bytes]);
+      if (result != 0)
+        reject(ESODIUM,ERR_FAILURE,nil);
+      else
+        resolve([[NSData dataWithBytesNoCopy:dc length:clen freeWhenDone:NO]  base64EncodedStringWithOptions:0]);
+      sodium_free(dc);
+    }
+  }
+}
+
+RCT_EXPORT_METHOD(crypto_box_seal_open:(NSString*)c pk:(NSString*)pk sk:(NSString*)sk resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+{
+  const NSData *dc = [[NSData alloc] initWithBase64EncodedString:c options:0];
+  const NSData *dpk = [[NSData alloc] initWithBase64EncodedString:pk options:0];
+  const NSData *dsk = [[NSData alloc] initWithBase64EncodedString:sk options:0];
+  if (!dc || !dpk || !dsk) reject(ESODIUM,ERR_FAILURE,nil);
+  else if (dpk.length != crypto_box_PUBLICKEYBYTES || dsk.length != crypto_box_SECRETKEYBYTES) reject(ESODIUM,ERR_BAD_KEY,nil);
+  else if (crypto_box_seal_open([dc bytes], [dc bytes], dc.length, [dpk bytes], [dsk bytes]) != 0)
+    reject(ESODIUM,ERR_FAILURE,nil);
+  else
+    resolve([[NSData dataWithBytesNoCopy:[dc bytes] length:dc.length - crypto_box_SEALBYTES freeWhenDone:NO]  base64EncodedStringWithOptions:0]);
 }
 
 

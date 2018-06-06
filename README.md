@@ -1,18 +1,20 @@
 # react-native-sodium
 
-Sodium library is build from source (you should not trust a binary build when dealing  with cryptography)
-Source code is downloaded and verified before compilation
+Sodium library is built from source (you should not trust a binary build when dealing with cryptography). Source code is downloaded and verified before compilation.
 
 ### General prerequisites
+
 - gpg (macports, homebrew)
 
 ### macOS compilation prerequisites
+
 - XCode
 - libtool (macports, homebrew)
 - autoconf (macports, homebrew)
 - automake (macports, homebrew)
 
 ### Android prerequisites
+
 - Android Studio
 - SDK
 - NDK
@@ -21,6 +23,7 @@ Source code is downloaded and verified before compilation
 - Environment variables
 
 ### Install
+
 ```
 npm i simpleweb/react-native-sodium#sealed-boxes
 react-native link react-native-sodium

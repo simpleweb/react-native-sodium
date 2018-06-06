@@ -49,6 +49,7 @@ public class RCTSodiumModule extends ReactContextBaseJavaModule {
      constants.put("crypto_auth_KEYBYTES", Sodium.crypto_auth_keybytes());
      constants.put("crypto_auth_BYTES", Sodium.crypto_auth_bytes());
      constants.put("crypto_box_PUBLICKEYBYTES", Sodium.crypto_box_publickeybytes());
+     constants.put("crypto_box_SEALBYTES", Sodium.crypto_box_sealbytes());
      constants.put("crypto_box_SECRETKEYBYTES", Sodium.crypto_box_secretkeybytes());
      constants.put("crypto_box_NONCEBYTES", Sodium.crypto_box_noncebytes());
      constants.put("crypto_box_MACBYTES", Sodium.crypto_box_macbytes());
@@ -350,6 +351,56 @@ public class RCTSodiumModule extends ReactContextBaseJavaModule {
           p.reject(ESODIUM,ERR_FAILURE);
         else
           p.resolve(Base64.encodeToString(s,Base64.NO_WRAP));
+      }
+    }
+    catch (Throwable t) {
+      p.reject(ESODIUM,ERR_FAILURE,t);
+    }
+  }
+
+  // ***************************************************************************
+  // * Public-key cryptography - sealed boxes
+  // ***************************************************************************
+  @ReactMethod
+  public void crypto_box_seal(final String m, final String pk, final Promise p) {
+    try {
+      byte[] mb = Base64.decode(m, Base64.NO_WRAP);
+      byte[] pkb = Base64.decode(pk, Base64.NO_WRAP);
+      if (pkb.length != Sodium.crypto_box_publickeybytes())
+        p.reject(ESODIUM,ERR_BAD_KEY);
+      else {
+        byte[] cb = new byte[mb.length + Sodium.crypto_box_sealbytes()];
+        int result = Sodium.crypto_box_seal(cb, mb, mb.length, pkb);
+        if (result != 0)
+          p.reject(ESODIUM,ERR_FAILURE);
+        else
+          p.resolve(Base64.encodeToString(cb,Base64.NO_WRAP));
+      }
+    }
+    catch (Throwable t) {
+      p.reject(ESODIUM,ERR_FAILURE,t);
+    }
+  }
+
+  @ReactMethod
+  public void crypto_box_seal_open(final String c, final String pk, final String sk, final Promise p) {
+    try {
+      byte[] cb = Base64.decode(c, Base64.NO_WRAP);
+      byte[] pkb = Base64.decode(pk, Base64.NO_WRAP);
+      byte[] skb = Base64.decode(sk, Base64.NO_WRAP);
+      if (pkb.length != Sodium.crypto_box_publickeybytes())
+        p.reject(ESODIUM,ERR_BAD_KEY);
+      else if (skb.length != Sodium.crypto_box_secretkeybytes())
+        p.reject(ESODIUM,ERR_BAD_KEY);
+      else if (cb.length < Sodium.crypto_box_sealbytes())
+        p.reject(ESODIUM,ERR_BAD_MSG);
+      else {
+        byte[] mb = new byte[cb.length - Sodium.crypto_box_sealbytes()];
+        int result = Sodium.crypto_box_seal_open(mb, cb, cb.length, pkb, skb);
+        if (result != 0)
+          p.reject(ESODIUM,ERR_FAILURE);
+        else
+          p.resolve(Base64.encodeToString(mb,Base64.NO_WRAP));
       }
     }
     catch (Throwable t) {

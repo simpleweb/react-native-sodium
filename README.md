@@ -33,32 +33,32 @@ npm i buffer
 ### How to use sealed boxes
 
 ```javascript
-import Sodium from 'react-native-sodium';
-import { Buffer } from 'buffer';
+import Sodium from "react-native-sodium";
+import { Buffer } from "buffer";
 
-// Message to encrypt
-const plaintext = 'Secret message';
+const sodiumBoxSealExample = async (plaintext: string) => {
 
-// Generate keys
-Sodium.crypto_box_keypair().then(keys => {
-  console.log(`Public key: ${keys.pk}`);
-  console.log(`Private key: ${keys.sk}`);
+  const keys = await Sodium.crypto_box_keypair();
+  const { pk, sk } = keys;
+
+  console.log(`Public key: ${pk}`);
+  console.log(`Private key: ${sk}`);
 
   // Base64 encode message
-  const plaintext64 = Buffer.from(plaintext, 'utf8').toString('base64');
+  const encoded = Buffer.from(plaintext, "utf8").toString("base64");
 
   // Encrypt
-  Sodium.crypto_box_seal(plaintext64, keys.pk).then(encrypted => {
-    console.log(`Encrypted: ${encrypted}`);
+  const encrypted = await Sodium.crypto_box_seal(encoded, pk);
 
-    // Decrypt
-    Sodium.crypto_box_seal_open(encrypted, keys.pk, keys.sk).then(decrypted64 => {
-      // Base64 decode
-      const decrypted = Buffer.from(decrypted64, 'base64').toString('utf8');
+  // Decrypt
+  const decrypted = await Sodium.crypto_box_seal_open(encrypted, pk, sk);
 
-      console.log(`Decrypted: ${decrypted}`);
-      console.log(`Success? ${plaintext === decrypted}`);
-    });
-  });
-});
+  // Base64 decode
+  const decoded = Buffer.from(decrypted, "base64").toString("utf8");
+
+  console.log(`Decrypted and decoded: ${decoded}`);
+  console.log(`Success? ${plaintext === decoded}`);
+}
+
+sodiumBoxSealExample("Encrypt me please");
 ```

@@ -25,9 +25,9 @@ Sodium library is built from source (you should not trust a binary build when de
 ### Install
 
 ```
-npm i simpleweb/react-native-sodium#sealed-boxes
+yarn add simpleweb/react-native-sodium
 react-native link react-native-sodium
-npm i buffer
+yarn add buffer
 ```
 
 ### How to use sealed boxes
